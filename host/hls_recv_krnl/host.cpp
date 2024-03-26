@@ -32,17 +32,57 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <iostream>
+#include <cstdlib>
+#include <sstream>
+#include <iomanip> // For std::hex
+#include <cstdint> // For uint64_t
 
 #define DATA_SIZE 62500000
-
-//Set IP address of FPGA
-#define IP_ADDR 0x0A01D498
-#define BOARD_NUMBER 0
-#define ARP 0x0A01D498
 
 void wait_for_enter(const std::string &msg) {
     std::cout << msg << std::endl;
     std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+}
+
+uint32_t getIpEnv() {
+    const char* env_var = getenv("DEVICE_1_IP_ADDRESS_HEX_0");
+
+    if (env_var == NULL) {
+        std::cerr << "Environment variable is not set." << std::endl;
+        return 0; // Or handle the error as appropriate
+    }
+
+    uint32_t value;
+    std::stringstream ss;
+
+    ss << std::hex << env_var;
+    if (!(ss >> value)) {
+        std::cerr << "Failed to parse IP address." << std::endl;
+        return 0; // Or handle the parsing error as appropriate
+    }
+
+    return value;
+}
+
+uint64_t getMacEnv() {
+    const char* env_var = getenv("DEVICE_1_MAC_ADDRESS_0");
+
+    if (env_var == NULL) {
+        std::cerr << "Environment variable is not set." << std::endl;
+        return 0; // Or handle the error as appropriate
+    }
+
+    uint64_t value;
+    std::stringstream ss;
+
+    ss << std::hex << env_var;
+    if (!(ss >> value)) {
+        std::cerr << "Failed to parse MAC address." << std::endl;
+        return 0; // Or handle the parsing error as appropriate
+    }
+
+    return value;
 }
 
 int main(int argc, char **argv) {
@@ -59,6 +99,12 @@ int main(int argc, char **argv) {
 
     cl::Kernel user_kernel;
     cl::Kernel network_kernel;
+
+    uint32_t local_IP = getIpEnv();
+    uint64_t local_mac_addr = getMacEnv();
+
+    std::cout<<std::hex<<"local IP:"<<local_IP<<", local MAC addr:"<<local_mac_addr<<std::endl;
+
 
     auto size = DATA_SIZE;
     
@@ -110,9 +156,9 @@ int main(int argc, char **argv) {
 
 
     // Set network kernel arguments
-    OCL_CHECK(err, err = network_kernel.setArg(0, IP_ADDR)); // Default IP address
-    OCL_CHECK(err, err = network_kernel.setArg(1, BOARD_NUMBER)); // Board number
-    OCL_CHECK(err, err = network_kernel.setArg(2, ARP)); // ARP lookup
+    OCL_CHECK(err, err = network_kernel.setArg(0, local_IP)); // Default IP address
+    OCL_CHECK(err, err = network_kernel.setArg(1, local_mac_addr)); // MAC addr
+    OCL_CHECK(err, err = network_kernel.setArg(2, local_IP)); // ARP lookup
 
     OCL_CHECK(err,
               cl::Buffer buffer_r1(context,

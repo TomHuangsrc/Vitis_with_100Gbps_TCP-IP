@@ -189,9 +189,9 @@ wire [31:0] set_ip_addr_data;
 reg[31:0] local_ip_address;
 wire[31:0]ip_address_used;
 
-wire set_board_number_valid;
-wire[3:0] set_board_number_data;
-reg[3:0] board_number;
+wire set_mac_addr_valid;
+wire[47:0] set_mac_addr_data;
+reg[47:0] mac_addr;
 
 // IPv6 lookup
 wire axis_ipv6_res_rsp_TVALID;
@@ -257,13 +257,13 @@ begin
         link_local_ipv6_address <= 0;
     end
     else begin
-        mie_mac_address <= {MAC_ADDRESS[47:44], (MAC_ADDRESS[43:40]+board_number), MAC_ADDRESS[39:0]};
-        arp_mac_address <= {MAC_ADDRESS[47:44], (MAC_ADDRESS[43:40]+board_number), MAC_ADDRESS[39:0]};
-        ipv6_mac_address <= {MAC_ADDRESS[47:44], (MAC_ADDRESS[43:40]+board_number), MAC_ADDRESS[39:0]};
+        mie_mac_address <= mac_addr;
+        arp_mac_address <= mac_addr;
+        ipv6_mac_address <= mac_addr;
         //link_local_ipv6_address[127:80] <= ipv6_mac_address;
         //link_local_ipv6_address[15:0] <= 16'h80fe; // fe80
         //link_local_ipv6_address[79:16] <= 64'h0000_0000_0000_0000;
-        link_local_ipv6_address <= {IPV6_ADDRESS[127:120]+board_number, IPV6_ADDRESS[119:0]};
+        link_local_ipv6_address <= {IPV6_ADDRESS[127:120], IPV6_ADDRESS[119:0]};
         if (DHCP_EN == 1) begin
             if (dhcp_ip_address_en == 1'b1) begin
                 iph_ip_address <= dhcp_ip_address;
@@ -362,7 +362,7 @@ ip_handler_ip ip_handler_inst (
 .s_axis_raw_TKEEP(axis_slice_to_ibh.keep),
 .s_axis_raw_TLAST(axis_slice_to_ibh.last),
 
-.myIpAddress_V(iph_ip_address),
+.myIpAddress(iph_ip_address),
 
 .ap_clk(net_clk), // input aclk
 .ap_rst_n(net_aresetn_r) // input aresetn
@@ -543,21 +543,21 @@ mac_ip_encode_ip mac_ip_encode_inst (
 .m_axis_ip_TDATA(axis_mie_to_intercon.data),
 .m_axis_ip_TKEEP(axis_mie_to_intercon.keep),
 .m_axis_ip_TLAST(axis_mie_to_intercon.last),
-.m_axis_arp_lookup_request_V_V_TVALID(axis_arp_lookup_request.valid),
-.m_axis_arp_lookup_request_V_V_TREADY(axis_arp_lookup_request.ready),
-.m_axis_arp_lookup_request_V_V_TDATA(axis_arp_lookup_request.data),
+.m_axis_arp_lookup_request_TVALID(axis_arp_lookup_request.valid),
+.m_axis_arp_lookup_request_TREADY(axis_arp_lookup_request.ready),
+.m_axis_arp_lookup_request_TDATA(axis_arp_lookup_request.data),
 .s_axis_ip_TVALID(axis_intercon_to_mie.valid),
 .s_axis_ip_TREADY(axis_intercon_to_mie.ready),
 .s_axis_ip_TDATA(axis_intercon_to_mie.data),
 .s_axis_ip_TKEEP(axis_intercon_to_mie.keep),
 .s_axis_ip_TLAST(axis_intercon_to_mie.last),
-.s_axis_arp_lookup_reply_V_TVALID(axis_arp_lookup_reply_r.valid),
-.s_axis_arp_lookup_reply_V_TREADY(axis_arp_lookup_reply_r.ready),
-.s_axis_arp_lookup_reply_V_TDATA(axis_arp_lookup_reply_r.data),
+.s_axis_arp_lookup_reply_TVALID(axis_arp_lookup_reply_r.valid),
+.s_axis_arp_lookup_reply_TREADY(axis_arp_lookup_reply_r.ready),
+.s_axis_arp_lookup_reply_TDATA(axis_arp_lookup_reply_r.data),
 
-.myMacAddress_V(mie_mac_address),                                    // input wire [47 : 0] regMacAddress_V
-.regSubNetMask_V(ip_subnet_mask),                                    // input wire [31 : 0] regSubNetMask_V
-.regDefaultGateway_V(ip_default_gateway),                            // input wire [31 : 0] regDefaultGateway_V
+.myMacAddress(mie_mac_address),                                    // input wire [47 : 0] regMacAddress_V
+.regSubNetMask(ip_subnet_mask),                                    // input wire [31 : 0] regSubNetMask_V
+.regDefaultGateway(ip_default_gateway),                            // input wire [31 : 0] regDefaultGateway_V
   
 .ap_clk(net_clk), // input aclk
 .ap_rst_n(net_aresetn_r) // input aresetn
@@ -615,30 +615,30 @@ arp_server_subnet_ip arp_server_inst(
 .m_axis_TDATA(axis_arp_to_arp_slice.data),
 .m_axis_TKEEP(axis_arp_to_arp_slice.keep),
 .m_axis_TLAST(axis_arp_to_arp_slice.last),
-.m_axis_arp_lookup_reply_V_TVALID(axis_arp_lookup_reply.valid),
-.m_axis_arp_lookup_reply_V_TREADY(axis_arp_lookup_reply.ready),
-.m_axis_arp_lookup_reply_V_TDATA(axis_arp_lookup_reply.data),
-.m_axis_host_arp_lookup_reply_V_TVALID(axis_host_arp_lookup_reply.valid),
-.m_axis_host_arp_lookup_reply_V_TREADY(axis_host_arp_lookup_reply.ready),
-.m_axis_host_arp_lookup_reply_V_TDATA(axis_host_arp_lookup_reply.data),
+.m_axis_arp_lookup_reply_TVALID(axis_arp_lookup_reply.valid),
+.m_axis_arp_lookup_reply_TREADY(axis_arp_lookup_reply.ready),
+.m_axis_arp_lookup_reply_TDATA(axis_arp_lookup_reply.data),
+.m_axis_host_arp_lookup_reply_TVALID(axis_host_arp_lookup_reply.valid),
+.m_axis_host_arp_lookup_reply_TREADY(axis_host_arp_lookup_reply.ready),
+.m_axis_host_arp_lookup_reply_TDATA(axis_host_arp_lookup_reply.data),
 .s_axis_TVALID(axis_arp_slice_to_arp.valid),
 .s_axis_TREADY(axis_arp_slice_to_arp.ready),
 .s_axis_TDATA(axis_arp_slice_to_arp.data),
 .s_axis_TKEEP(axis_arp_slice_to_arp.keep),
 .s_axis_TLAST(axis_arp_slice_to_arp.last),
-.s_axis_arp_lookup_request_V_V_TVALID(axis_arp_lookup_request_r.valid),
-.s_axis_arp_lookup_request_V_V_TREADY(axis_arp_lookup_request_r.ready),
-.s_axis_arp_lookup_request_V_V_TDATA(axis_arp_lookup_request_r.data),
-.s_axis_host_arp_lookup_request_V_V_TVALID(axis_host_arp_lookup_request.valid),
-.s_axis_host_arp_lookup_request_V_V_TREADY(axis_host_arp_lookup_request.ready),
-.s_axis_host_arp_lookup_request_V_V_TDATA(axis_host_arp_lookup_request.data),
+.s_axis_arp_lookup_request_TVALID(axis_arp_lookup_request_r.valid),
+.s_axis_arp_lookup_request_TREADY(axis_arp_lookup_request_r.ready),
+.s_axis_arp_lookup_request_TDATA(axis_arp_lookup_request_r.data),
+.s_axis_host_arp_lookup_request_TVALID(axis_host_arp_lookup_request.valid),
+.s_axis_host_arp_lookup_request_TREADY(axis_host_arp_lookup_request.ready),
+.s_axis_host_arp_lookup_request_TDATA(axis_host_arp_lookup_request.data),
 
-.myMacAddress_V(arp_mac_address),
-.myIpAddress_V(arp_ip_address),
-.regRequestCount_V(arp_request_pkg_counter),
-.regRequestCount_V_ap_vld(),
-.regReplyCount_V(arp_reply_pkg_counter),
-.regReplyCount_V_ap_vld(),
+.myMacAddress(arp_mac_address),
+.myIpAddress(arp_ip_address),
+.regRequestCount(arp_request_pkg_counter),
+.regRequestCount_ap_vld(),
+.regReplyCount(arp_reply_pkg_counter),
+.regReplyCount_ap_vld(),
 
 .ap_clk(net_clk), // input aclk
 .ap_rst_n(net_aresetn_r) // input aresetn
@@ -648,7 +648,7 @@ arp_server_subnet_ip arp_server_inst(
 always @(posedge net_clk) begin
     if (~net_aresetn_r) begin
         local_ip_address <= 32'hD1D4010B;
-        board_number <= 0;
+        mac_addr <= 0;
     end
     else begin
         if (set_ip_addr_valid) begin
@@ -657,8 +657,13 @@ always @(posedge net_clk) begin
             local_ip_address[23:16] <= set_ip_addr_data[15:8];
             local_ip_address[31:24] <= set_ip_addr_data[7:0];
         end
-        if (set_board_number_valid) begin
-            board_number <= set_board_number_data;
+        if (set_mac_addr_valid) begin
+            mac_addr[7:0] <= set_mac_addr_data[47:40];
+            mac_addr[15:8] <= set_mac_addr_data[39:32];
+            mac_addr[23:16] <= set_mac_addr_data[31:24];
+            mac_addr[31:24] <= set_mac_addr_data[23:16];
+            mac_addr[39:32] <= set_mac_addr_data[15:8];
+            mac_addr[47:40] <= set_mac_addr_data[7:0];
         end
     end
 end
@@ -963,7 +968,7 @@ assign ap_ready = ap_done;
 
 
 assign set_ip_addr_valid = ap_start_pulse;
-assign set_board_number_valid = ap_start_pulse;
+assign set_mac_addr_valid = ap_start_pulse;
 assign axis_host_arp_lookup_request.valid = ap_start_pulse; //TODO: what about axis_host_arp_lookup_request.ready?
 assign axis_host_arp_lookup_reply.ready = 1'b1;
 
@@ -997,7 +1002,7 @@ network_control_s_axi #(
     .interrupt(interrupt),
 
     .ip_addr(set_ip_addr_data),
-    .board_number(set_board_number_data),
+    .mac_addr(set_mac_addr_data),
     .arp(axis_host_arp_lookup_request.data),
     .axi00_ptr0(axi00_ptr0),
     .axi01_ptr0(axi01_ptr0),
@@ -1060,6 +1065,30 @@ end
  * Statistics
  */
 
+vio_network vio_network(
+  .clk(net_clk),
+  .probe_in0(toe_ip_address),
+  .probe_in1(iph_ip_address),
+  .probe_in2(mie_mac_address),
+  .probe_in3(arp_mac_address),
+  .probe_in4(arp_ip_address),
+  .probe_in5(rx_word_counter),
+  .probe_in6(rx_pkg_counter),
+  .probe_in7(tx_word_counter),
+  .probe_in8(tx_pkg_counter),
+  .probe_in9(tcp_rx_pkg_counter),
+  .probe_in10(tcp_tx_pkg_counter),
+  .probe_in11(arp_rx_pkg_counter),
+  .probe_in12(arp_tx_pkg_counter),
+  .probe_in13(udp_rx_pkg_counter),
+  .probe_in14(udp_tx_pkg_counter),
+  .probe_in15(icmp_rx_pkg_counter),
+  .probe_in16(icmp_tx_pkg_counter),
+  .probe_in17(axis_stream_down_counter),
+  .probe_in18(mac_addr)
+
+);
+
 always @(posedge net_clk) begin
     if (~net_aresetn_r) begin
         rx_word_counter <= '0;
@@ -1078,6 +1107,9 @@ always @(posedge net_clk) begin
 
         axis_stream_down_counter <= '0;
         axis_stream_down <= 1'b0;
+
+        icmp_rx_pkg_counter <= '0;
+        icmp_tx_pkg_counter <= '0;
     end
     else begin
         if (s_axis_net.ready) begin

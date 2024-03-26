@@ -1,6 +1,6 @@
-# Vitis with 100 Gbps TCP/IP Network Stack
+# EasyNet: 100 Gbps TCP/IP Network Stack for HLS
 
-This repository provides TCP/IP network support at 100 Gbit/s in Vitis and provides several examples to demonstrate the usage. 
+This repository provides TCP/IP network support at 100 Gbit/s in Vitis-HLS and provides several examples to demonstrate the usage. 
 
 ## Architecture Overview
 
@@ -55,17 +55,17 @@ Setup the TCP/IP stack HLS IPs:
 
     mkdir build
     cd build
-    cmake .. -DFDEV_NAME=u280 -DTCP_STACK_EN=1 -DTCP_STACK_RX_DDR_BYPASS_EN=1 
-    make installip
+    cmake .. -DFDEV_NAME=u280 -DTCP_STACK_EN=1
+    make ip
 
 
 TCP/IP stack options:
 
 | Name                   | Values                       | Desription                                                                         |
 |------------------------|------------------------------|------------------------------------------------------------------------------------|
-| TCP\_STACK\_MAX\_SESSIONS        | Integer                        | Maximum number of session supported by the stack. Each session requires a 64 KB Tx and Rx buffer in off-chip memory and state tables using on-chip memory. The choice of this parameter is a trade-off between maximum supported session count and resource usage. ; Default: 1000                                                                         |
-| TCP\_STACK\_RX\_DDR\_BYPASS\_EN      |         <0,1>               | Bypassing Rx packets buffering. If user application can consume Rx packets at line-rate, setting this parameter allows the `network` kernel forward packets directly to the `user` kernel, which reduces global memory usage and latency. ; Default: 1                      |
-| TCP\_STACK\_WINDOW\_SCALING\_EN |<0,1>                       | Enable TCP window scaling; Default: 1   
+| FNS\_TCP\_STACK\_MAX\_SESSIONS        | Integer                        | Maximum number of session supported by the stack. Each session requires a 64 KB Tx and Rx buffer in off-chip memory and state tables using on-chip memory. The choice of this parameter is a trade-off between maximum supported session count and resource usage. ; Default: 1000                                                                         |
+| FNS\_TCP\_STACK\_RX\_DDR\_BYPASS\_EN      |         <0,1>               | Bypassing Rx packets buffering. If user application can consume Rx packets at line-rate, setting this parameter allows the `network` kernel forward packets directly to the `user` kernel, which reduces global memory usage and latency. ; Default: 1                      |
+| FNS\_TCP\_STACK\_WINDOW\_SCALING\_EN |<0,1>                       | Enable TCP window scaling; Default: 1   
 
 ## Create Design
 
@@ -123,17 +123,38 @@ Kernel options:
 
 | Vitis  | XRT       |
 |--------|-----------|
-| 2019.2 | 2.6.655   |
+| 2022.1 | 2.13.466  |
 
 ### Alveo Cards
 
 | Alveo | Development Target Platform(s) | 
 |-------|----------|
 | U280  | xilinx_u280_xdma_201920_3 | 
-
+| U250  | xilinx_u250_gen3x16_xdma_3_1_202020_1 | 
+| U50  | xilinx_u50_gen3x16_xdma_5_202210_1 |
+| U55C  | xilinx_u55c_gen3x16_xdma_3_202210_1 |  
 ### Requirements
 
 In order to generate this design you will need a valid [UltraScale+ Integrated 100G Ethernet Subsystem](https://www.xilinx.com/products/intellectual-property/cmac_usplus.html) license set up in Vivado.
 
 ## Acknowledgement
 We would like to thank David Sidler for developing the prototype of 100 Gbps TCP/IP stack and Mario Daniel Ruiz Noguera for helpful discussion. We also thank Xilinx for generous donations of software and hardware to build the Xilinx Adaptive Compute Cluster (XACC) at ETH Zurich.
+
+## Publication
+
+###### If you use EasyNet, cite us :
+
+```bibtex
+@INPROCEEDINGS {easynet,
+    author = {Z. He and D. Korolija and G. Alonso},
+    booktitle = {2021 31st International Conference on Field-Programmable Logic and Applications (FPL)},
+    title = {EasyNet: 100 Gbps Network for HLS},
+    year = {2021},
+    pages = {197-203},
+    doi = {10.1109/FPL53798.2021.00040},
+    url = {https://doi.ieeecomputersociety.org/10.1109/FPL53798.2021.00040},
+    publisher = {IEEE Computer Society},
+    address = {Los Alamitos, CA, USA},
+    month = {sep}
+}
+```

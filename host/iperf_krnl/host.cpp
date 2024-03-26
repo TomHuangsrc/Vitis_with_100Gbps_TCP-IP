@@ -32,22 +32,62 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <iostream>
+#include <cstdlib>
+#include <sstream>
+#include <iomanip> // For std::hex
+#include <cstdint> // For uint64_t
 
 #define DATA_SIZE 62500000
-
-//Set IP address of FPGA
-#define IP_ADDR 0x0A01D498
-#define BOARD_NUMBER 0
-#define ARP 0x0A01D498
 
 void wait_for_enter(const std::string &msg) {
     std::cout << msg << std::endl;
     std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 }
 
+uint32_t getIpEnv() {
+    const char* env_var = getenv("DEVICE_1_IP_ADDRESS_HEX_0");
+
+    if (env_var == NULL) {
+        std::cerr << "Environment variable is not set." << std::endl;
+        return 0; // Or handle the error as appropriate
+    }
+
+    uint32_t value;
+    std::stringstream ss;
+
+    ss << std::hex << env_var;
+    if (!(ss >> value)) {
+        std::cerr << "Failed to parse IP address." << std::endl;
+        return 0; // Or handle the parsing error as appropriate
+    }
+
+    return value;
+}
+
+uint64_t getMacEnv() {
+    const char* env_var = getenv("DEVICE_1_MAC_ADDRESS_0");
+
+    if (env_var == NULL) {
+        std::cerr << "Environment variable is not set." << std::endl;
+        return 0; // Or handle the error as appropriate
+    }
+
+    uint64_t value;
+    std::stringstream ss;
+
+    ss << std::hex << env_var;
+    if (!(ss >> value)) {
+        std::cerr << "Failed to parse MAC address." << std::endl;
+        return 0; // Or handle the parsing error as appropriate
+    }
+
+    return value;
+}
+
 int main(int argc, char **argv) {
     if (argc < 2) {
-        std::cout << "Usage: " << argv[0] << " <XCLBIN File>  [<Server IP address in format 10.1.212.121> <#Connection> <Seconds>]" << std::endl;
+        std::cout << "Usage: " << argv[0] << " <XCLBIN File>  [<Target IP address in format 10.1.212.121> <#Connection> <Seconds> <packetWord>]" << std::endl;
         return EXIT_FAILURE;
     }
 
@@ -105,14 +145,17 @@ int main(int argc, char **argv) {
         std::cout << "Failed to program any device found, exit!\n";
         exit(EXIT_FAILURE);
     }
-    
-    wait_for_enter("\nPress ENTER to continue after setting up ILA trigger...");
+
+    uint32_t local_IP = getIpEnv();
+    uint64_t local_mac_addr = getMacEnv();
+
+    std::cout<<std::hex<<"local IP:"<<local_IP<<", local MAC addr:"<<local_mac_addr<<std::endl;
 
 
     // Set network kernel arguments
-    OCL_CHECK(err, err = network_kernel.setArg(0, IP_ADDR)); // Default IP address
-    OCL_CHECK(err, err = network_kernel.setArg(1, BOARD_NUMBER)); // Board number
-    OCL_CHECK(err, err = network_kernel.setArg(2, ARP)); // ARP lookup
+    OCL_CHECK(err, err = network_kernel.setArg(0, local_IP)); // Default IP address
+    OCL_CHECK(err, err = network_kernel.setArg(1, local_mac_addr)); // MAC Address
+    OCL_CHECK(err, err = network_kernel.setArg(2, local_IP)); // ARP lookup
 
     //TCP Tx Engine Buffering 
     OCL_CHECK(err,
@@ -136,6 +179,7 @@ int main(int argc, char **argv) {
     printf("enqueued network kernel\n");
     OCL_CHECK(err, err = q.finish());
 
+    wait_for_enter("\nPress ENTER to continue after setting up ILA trigger...");
     
     // Set iperf kernel arguments
 
@@ -176,14 +220,20 @@ int main(int argc, char **argv) {
     if(argc >= 5)
         timeInSeconds = strtol(argv[4], NULL, 10);
 
+    if (argc >= 6)
+    {
+        numPacketWord = strtol(argv[5], NULL, 10);
+    }
+
     
     //Default Clocking frequency 250MHz
     uint64_t timeInCycles =( (uint64_t) timeInSeconds * 250000000);
 
 
     printf("number of connection:%d\n",connection);
-    printf("IP_ADDR:%x\n", baseIpAddr);
+    printf("Target IP_ADDR:%x\n", baseIpAddr);
     printf("time in seconds: %d, time in cycles:%llu\n", timeInSeconds, timeInCycles);
+    printf("packetWord:%d \n", numPacketWord);
 
     //Set user Kernel Arguments
     OCL_CHECK(err, err = user_kernel.setArg(0, connection));
